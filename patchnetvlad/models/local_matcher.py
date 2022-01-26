@@ -147,6 +147,16 @@ def local_matcher(predictions, eval_set, input_query_local_features_prefix,
     matcher = PatchMatcher(config['feature_match']['matcher'], patch_sizes, strides, all_keypoints,
                            all_indices)
 
+    #--------------------------------------------------------------------------------------
+    #HC_ADDED: initialise an array to save the diffs:
+    dim_qry=predictions.shape[0]  # TODO: need to account for index and query lengths being different
+    dim_ref=predictions.shape[1]
+    print('HC debug: local_matcher: prediction.shape[0]=',dim_qry)
+    print('HC debug: local_matcher: prediction.shape[1]=',dim_ref)
+    saved_diffs=np.zeros([dim_qry,dim_ref,len(patch_sizes)])
+    saved_norm_diffs=np.zeros([dim_qry,dim_ref])
+    #--------------------------------------------------------------------------------------
+    
     for q_idx, pred in enumerate(tqdm(predictions, leave=False, desc='Patch compare pred')):
         diffs = np.zeros((predictions.shape[1], len(patch_sizes)))
         image_name_query = os.path.splitext(os.path.basename(eval_set.images[eval_set.numDb + q_idx]))[0]
@@ -163,9 +173,32 @@ def local_matcher(predictions, eval_set, input_query_local_features_prefix,
                 dbfeat.append(torch.tensor(np.load(dbfilename), device=device))
 
             diffs[k, :], _, _ = matcher.match(qfeat, dbfeat)
-
+        #--------------------------------------------------------------------------------------
+        #HC_ADDED:
+        saved_diffs[q_idx,:,:]=diffs
+        #--------------------------------------------------------------------------------------
         diffs = normalise_func(diffs, len(patch_sizes), patch_weights)
+        #--------------------------------------------------------------------------------------
+        #HC_ADDED:
+        saved_norm_diffs[q_idx,:]=diffs
+        #-------------------------------------------------------------------------------------- 
         cand_sorted = np.argsort(diffs)
         reordered_preds.append(pred[cand_sorted])
 
+    #--------------------------------------------------------------------------------------
+    # HC_ADDED:    
+    Sn=np.zeros([dim_ref,dim_qry])
+    for q in range(0,dim_qry):
+        for i,value in enumerate(predictions[q,:]):
+            Sn[value,q]=saved_norm_diffs[q,i]
+
+    np.save('Sn.npy', Sn)
+    print('----HC: local_matcher: Attempted to save Sn.npy----')
+    np.save('reordered_preds.npy', reordered_preds)
+    print('----HC: local_matcher: Attempted to save reordered_preds.npy----')
+    np.save('saved_diffs.npy', saved_diffs)
+    print('----HC: local_matcher: Attempted to save saved_diffs.npy----')
+    np.save('saved_norm_diffs.npy', saved_norm_diffs)
+    print('----HC: local_matcher: Attempted to save saved_norm_diffs.npy----')
+    #--------------------------------------------------------------------------------------
     return reordered_preds

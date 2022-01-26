@@ -138,8 +138,16 @@ def feature_match(eval_set, device, opt, config):
             predictions = np.array(predictions_new)
         else:
             # noinspection PyArgumentList
-            _, predictions = faiss_index.search(qFeat, min(len(qFeat), max(n_values)))
-
+            #-------------------------------------------
+            #HC: Modified to save distances
+            #_, predictions = faiss_index.search(qFeat, min(len(qFeat), max(n_values)))
+            netvlad_distances, predictions = faiss_index.search(qFeat, min(len(qFeat), max(n_values)))
+            np.save('netvlad_predictions.npy', predictions)
+            print('----HC: feature_match: Attempted to save netvlad_predictions.npy----')
+            np.save('netvlad_distances.npy', netvlad_distances)
+            print('----HC: feature_match: Attempted to save netvlad_distances.npy----')
+            #-------------------------------------------
+            
     reranked_predictions = local_matcher(predictions, eval_set, input_query_local_features_prefix,
                                          input_index_local_features_prefix, config, device)
 
