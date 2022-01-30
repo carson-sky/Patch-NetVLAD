@@ -39,16 +39,20 @@ from patchnetvlad.tools import PATCHNETVLAD_ROOT_DIR
 def input_transform(resize=(480, 640)):
     if resize[0] > 0 and resize[1] > 0:
         return transforms.Compose([
+            transforms.Grayscale(num_output_channels=3), #HC_ADDED
             transforms.Resize(resize),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225]),
+            #transforms.Normalize(mean=[0.485, 0.456, 0.406],#HC_REMOVED
+            #                     std=[0.229, 0.224, 0.225]),#HC_REMOVED
+            transforms.Normalize([0.5,.5,.5], [0.5,.5,.5])  #HC_ADDED
         ])
     else:
         return transforms.Compose([
+            transforms.Grayscale(num_output_channels=3), #HC_ADDED
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225]),
+            transforms.Normalize([0.5], [0.5])  #HC_ADDED
+            #transforms.Normalize(mean=[0.485, 0.456, 0.406], #HC_REMOVED
+            #                     std=[0.229, 0.224, 0.225]), #HC_REMOVED
         ])
 
 
