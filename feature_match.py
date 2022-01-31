@@ -105,8 +105,10 @@ def feature_match(eval_set, device, opt, config):
     input_index_global_features_prefix = join(opt.index_input_features_dir, 'globalfeats.npy')
 
     qFeat = np.load(input_query_global_features_prefix)
+    print('HC debug: feature_match: qFeat.shape=',qFeat.shape)
     pool_size = qFeat.shape[1]
     dbFeat = np.load(input_index_global_features_prefix)
+    print('HC debug: feature_match: dbFeat.shape=',dbFeat.shape)
 
     if dbFeat.dtype != np.float32:
         qFeat = qFeat.astype('float32')
@@ -141,7 +143,15 @@ def feature_match(eval_set, device, opt, config):
             #-------------------------------------------
             #HC: Modified to save distances
             #_, predictions = faiss_index.search(qFeat, min(len(qFeat), max(n_values)))
-            netvlad_distances, predictions = faiss_index.search(qFeat, min(len(qFeat), max(n_values)))
+            #netvlad_distances, predictions = faiss_index.search(qFeat, min(len(qFeat), max(n_values)))
+            #HC: this was modified further to ensure distances to all reference (db) images are considered:
+            netvlad_distances, predictions = faiss_index.search(qFeat, dbFeat.shape[0])
+            #------------------------------- 
+            # HC_ADDED: save predictions to inspect them:
+            print('HC debug: feature_match: n_values=',n_values)
+            print('HC debug: feature_match: len(qFeat)=',len(qFeat))
+            print('HC debug: feature_match: predictions.shape=',predictions.shape)
+            
             np.save('netvlad_predictions.npy', predictions)
             print('----HC: feature_match: Attempted to save netvlad_predictions.npy----')
             np.save('netvlad_distances.npy', netvlad_distances)
